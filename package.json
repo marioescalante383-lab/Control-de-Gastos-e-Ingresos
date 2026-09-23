@@ -1,0 +1,13 @@
+{
+  "name": "antigravity-gastos-e-ingresos",
+  "version": "1.0.0",
+  "description": "Sistema integral de control de gastos, ingresos, inventario y comprobantes con IA",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build"
+  },
+  "keywords": ["finance", "ocr", "inventory", "ai", "gemini"],
+  "author": "Antigravity Finance",
+  "license": "MIT"
+}

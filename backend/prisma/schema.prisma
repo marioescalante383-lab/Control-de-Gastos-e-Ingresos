@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  passwordHash       String?
+  fullName           String
+  googleId           String?
+  googleRefreshToken String?
+  driveFolderId      String?
+  currency           String               @default("MXN")
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  categories         Category[]
+  stores             Store[]
+  products           Product[]
+  receipts           Receipt[]
+  transactions       Transaction[]
+  incomes            Income[]
+  inventoryItems     InventoryItem[]
+  inventoryMovements InventoryMovement[]
+  categorizationRules CategorizationRule[]
+  auditLogs          AuditLog[]
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  userId      String?
+  name        String
+  type        String   @default("EXPENSE") // EXPENSE, INCOME, BOTH
+  color       String   @default("#3b82f6")
+  icon        String   @default("Tag")
+  isSystem    Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products    Product[]
+  transactionItems TransactionItem[]
+  incomes     Income[]
+  categorizationRules CategorizationRule[]
+}
+
+model Store {
+  id             String        @id @default(uuid())
+  userId         String
+  name           String
+  normalizedName String
+  rfc            String?
+  address        String?
+  createdAt      DateTime      @default(now())
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products       Product[]
+  transactions   Transaction[]
+  priceHistories PriceHistory[]
+  productAliases ProductAlias[]
+}
+
+model Product {
+  id               String               @id @default(uuid())
+  userId           String
+  categoryId       String
+  defaultStoreId   String?
+  name             String
+  normalizedName   String
+  unitOfMeasure    String               @default("PZA") // PZA, KG, L, G, ML, PAQ
+  minStock         Float                @default(0)
+  desiredStock     Float                @default(0)
+  referencePrice   Float?
+  lastPricePaid    Float?
+  affectsInventory Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category         Category             @relation(fields: [categoryId], references: [id])
+  defaultStore     Store?               @relation(fields: [defaultStoreId], references: [id])
+  aliases          ProductAlias[]
+  transactionItems TransactionItem[]
+  inventoryItem    InventoryItem?
+  inventoryMovements InventoryMovement[]
+  priceHistories   PriceHistory[]
+}
+
+model ProductAlias {
+  id              String   @id @default(uuid())
+  productId       String
+  rawText         String
+  storeId         String?
+  confidenceScore Float    @default(1.0)
+  timesUsed       Int      @default(1)
+  createdAt       DateTime @default(now())
+
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store           Store?   @relation(fields: [storeId], references: [id])
+}
+
+model Receipt {
+  id                 String           @id @default(uuid())
+  userId             String
+  driveFileId        String?
+  driveWebViewLink   String?
+  localFilename      String
+  fileSha256         String
+  imagePhash         String?
+  mimeType           String           @default("image/jpeg")
+  fileSize           Int              @default(0)
+  status             String           @default("PENDING_OCR") // PENDING_OCR, OCR_READY, VALIDATED, REJECTED, DUPLICATE_FLAGGED
+  rawAiPayload       String?          // JSON serializado
+  confidenceOverall  Float            @default(0)
+  createdAt          DateTime         @default(now())
+
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transaction        Transaction?
+  duplicateMatches   DuplicateMatch[] @relation("OriginReceipt")
+  candidateMatches   DuplicateMatch[] @relation("CandidateReceipt")
+}
+
+model DuplicateMatch {
+  id                     String       @id @default(uuid())
+  receiptId              String
+  candidateReceiptId     String?
+  candidateTransactionId String?
+  matchType              String       // EXACT_HASH, PERCEPTUAL_HASH, FISCAL_FOLIO, SIMILAR_CONTENT
+  similarityPercentage   Float
+  userResolution         String       @default("PENDING") // PENDING, DISMISSED, CONFIRMED
+  createdAt              DateTime     @default(now())
+
+  receipt                Receipt      @relation("OriginReceipt", fields: [receiptId], references: [id], onDelete: Cascade)
+  candidateReceipt       Receipt?     @relation("CandidateReceipt", fields: [candidateReceiptId], references: [id])
+  candidateTransaction   Transaction? @relation(fields: [candidateTransactionId], references: [id])
+}
+
+model Transaction {
+  id             String            @id @default(uuid())
+  userId         String
+  receiptId      String?           @unique
+  storeId        String?
+  date           DateTime          @default(now())
+  time           String?
+  ticketNumber   String?
+  paymentMethod  String            @default("CASH") // CASH, DEBIT_CARD, CREDIT_CARD, TRANSFER, OTHER
+  currency       String            @default("MXN")
+  subtotal       Float             @default(0)
+  discount       Float             @default(0)
+  tax            Float             @default(0)
+  total          Float
+  isManual       Boolean           @default(false)
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  receipt        Receipt?          @relation(fields: [receiptId], references: [id])
+  store          Store?            @relation(fields: [storeId], references: [id])
+  items          TransactionItem[]
+  priceHistories PriceHistory[]
+  duplicateMatches DuplicateMatch[]
+}
+
+model TransactionItem {
+  id               String              @id @default(uuid())
+  transactionId    String
+  productId        String?
+  categoryId       String
+  rawDescription   String
+  quantity         Float               @default(1)
+  unitPrice        Float
+  discount         Float               @default(0)
+  tax              Float               @default(0)
+  totalPrice       Float
+  confidenceScore  Float               @default(1.0)
+  affectsInventory Boolean             @default(true)
+
+  transaction      Transaction         @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product          Product?            @relation(fields: [productId], references: [id])
+  category         Category            @relation(fields: [categoryId], references: [id])
+  inventoryMovements InventoryMovement[]
+}
+
+model Income {
+  id            String   @id @default(uuid())
+  userId        String
+  categoryId    String
+  date          DateTime @default(now())
+  concept       String
+  amount        Float
+  paymentMethod String   @default("TRANSFER") // TRANSFER, CASH, CHECK, DEPOSIT, OTHER
+  sourceEntity  String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category @relation(fields: [categoryId], references: [id])
+}
+
+model InventoryItem {
+  id                String    @id @default(uuid())
+  userId            String
+  productId         String    @unique
+  currentStock      Float     @default(0)
+  unitOfMeasure     String    @default("PZA")
+  lastPurchasedDate DateTime?
+  lastPricePaid     Float?
+  referencePrice    Float?
+  updatedAt         DateTime  @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model InventoryMovement {
+  id                String           @id @default(uuid())
+  userId            String
+  productId         String
+  movementType      String           // PURCHASE_ENTRY, CONSUMPTION, EXPIRED, LOST, GIFTED, MANUAL_ADJUSTMENT
+  quantity          Float            // positivo para entradas, negativo para salidas
+  previousStock     Float
+  newStock          Float
+  transactionItemId String?
+  notes             String?
+  date              DateTime         @default(now())
+  createdAt         DateTime         @default(now())
+
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product           Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  transactionItem   TransactionItem? @relation(fields: [transactionItemId], references: [id])
+}
+
+model PriceHistory {
+  id            String      @id @default(uuid())
+  productId     String
+  storeId       String?
+  transactionId String
+  date          DateTime    @default(now())
+  unitPrice     Float
+  createdAt     DateTime    @default(now())
+
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store         Store?      @relation(fields: [storeId], references: [id])
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model CategorizationRule {
+  id               String   @id @default(uuid())
+  userId           String
+  matchKeyword     String
+  matchField       String   @default("RAW_DESCRIPTION") // RAW_DESCRIPTION, PRODUCT_NAME, STORE_NAME
+  targetCategoryId String
+  priority         Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetCategory   Category @relation(fields: [targetCategoryId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String   // CREATE, UPDATE, DELETE, MERGE
+  entityType String   // TRANSACTION, RECEIPT, PRODUCT, INVENTORY, INCOME
+  entityId   String
+  beforeState String? // JSON serializado
+  afterState  String? // JSON serializado
+  timestamp  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

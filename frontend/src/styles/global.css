@@ -1,0 +1,143 @@
+@import './tokens.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--text-white);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Scrollbar Personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-surface-elevated);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Layout Principal de la Aplicación */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-bottom: 90px; /* Espacio para barra inferior en móviles */
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    padding-bottom: 40px;
+    margin-left: 260px; /* Ancho de la barra lateral de escritorio */
+  }
+}
+
+.content-wrapper {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+@media (min-width: 768px) {
+  .content-wrapper {
+    padding: 32px 28px;
+  }
+}
+
+/* Utilidades Comunes */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-income {
+  background: var(--income-bg);
+  color: var(--income);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge-expense {
+  background: var(--expense-bg);
+  color: var(--expense);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge-info {
+  background: var(--info-bg);
+  color: var(--info);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+@media (min-width: 1024px) {
+  .desktop-sidebar {
+    display: flex !important;
+  }
+  .mobile-tab-bar {
+    display: none !important;
+  }
+  .desktop-inline {
+    display: inline !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .desktop-sidebar {
+    display: none !important;
+  }
+  .mobile-tab-bar {
+    display: flex !important;
+  }
+}
+
