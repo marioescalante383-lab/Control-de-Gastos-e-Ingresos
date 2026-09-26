@@ -140,6 +140,75 @@ export class InventoryController {
       res.status(500).json({ error: 'Error al actualizar configuración del producto.' });
     }
   }
+
+  async createProduct(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const { name, categoryId, initialStock, minStock, desiredStock, unitOfMeasure, referencePrice } = req.body;
+
+      if (!name || !categoryId) {
+        res.status(400).json({ error: 'Nombre de producto y categoría son requeridos.' });
+        return;
+      }
+
+      const normalized = name.toUpperCase().trim();
+      let product = await prisma.product.findFirst({
+        where: { userId, normalizedName: normalized },
+      });
+
+      if (!product) {
+        product = await prisma.product.create({
+          data: {
+            userId,
+            categoryId,
+            name: name.trim(),
+            normalizedName: normalized,
+            unitOfMeasure: unitOfMeasure || 'PZA',
+            minStock: minStock !== undefined ? Number(minStock) : 0,
+            desiredStock: desiredStock !== undefined ? Number(desiredStock) : 0,
+            referencePrice: referencePrice ? Number(referencePrice) : null,
+            affectsInventory: true,
+          },
+        });
+      }
+
+      const stockQty = initialStock !== undefined ? Number(initialStock) : 0;
+      let invItem = await prisma.inventoryItem.findUnique({
+        where: { productId: product.id },
+      });
+
+      if (!invItem) {
+        invItem = await prisma.inventoryItem.create({
+          data: {
+            userId,
+            productId: product.id,
+            currentStock: stockQty,
+            unitOfMeasure: unitOfMeasure || 'PZA',
+            referencePrice: referencePrice ? Number(referencePrice) : null,
+          },
+        });
+
+        if (stockQty > 0) {
+          await prisma.inventoryMovement.create({
+            data: {
+              userId,
+              productId: product.id,
+              movementType: 'MANUAL_ADJUSTMENT',
+              quantity: stockQty,
+              previousStock: 0,
+              newStock: stockQty,
+              notes: 'Alta inicial de producto en inventario',
+            },
+          });
+        }
+      }
+
+      res.status(201).json({ product, inventoryItem: invItem });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Error al crear producto: ' + err.message });
+    }
+  }
 }
 
 export const inventoryController = new InventoryController();
+

@@ -20,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     { id: 'shopping', label: 'Lista de Compras', icon: ShoppingCart },
     { id: 'transactions', label: 'Transacciones', icon: Receipt },
     { id: 'reports', label: 'Reportes y Métricas', icon: FileSpreadsheet },
+    { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
   return (

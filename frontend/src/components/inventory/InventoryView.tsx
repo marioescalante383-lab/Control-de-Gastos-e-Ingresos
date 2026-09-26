@@ -10,12 +10,16 @@ import {
   XCircle,
   X,
   TrendingUp,
+  Plus,
+  Sliders,
+  Settings,
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { InventoryItem } from '../../types';
+import { InventoryItem, Category } from '../../types';
 
 export const InventoryView: React.FC = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
@@ -33,11 +37,37 @@ export const InventoryView: React.FC = () => {
   const [kardexData, setKardexData] = useState<any>(null);
   const [loadingKardex, setLoadingKardex] = useState(false);
 
+  // Estados de Modal Nuevo Producto
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newCategoryId, setNewCategoryId] = useState('');
+  const [newStock, setNewStock] = useState(1);
+  const [newMinStock, setNewMinStock] = useState(2);
+  const [newDesiredStock, setNewDesiredStock] = useState(5);
+  const [newUnit, setNewUnit] = useState('PZA');
+  const [newPrice, setNewPrice] = useState(0);
+  const [creatingProduct, setCreatingProduct] = useState(false);
+
+  // Estados de Modal Editar Configuración de Producto
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [editMinStock, setEditMinStock] = useState(0);
+  const [editDesiredStock, setEditDesiredStock] = useState(0);
+  const [editUnit, setEditUnit] = useState('PZA');
+  const [savingEdit, setSavingEdit] = useState(false);
+
   const fetchInventory = async () => {
     setLoading(true);
     try {
-      const data = await api.getInventory();
-      setItems(data);
+      const [invData, cats] = await Promise.all([
+        api.getInventory(),
+        api.getCategories(),
+      ]);
+      setItems(invData);
+      setCategories(cats);
+      if (cats.length > 0 && !newCategoryId) {
+        setNewCategoryId(cats[0].id);
+      }
     } catch (err) {
       console.error('Error al cargar inventario:', err);
     } finally {
@@ -92,6 +122,58 @@ export const InventoryView: React.FC = () => {
     }
   };
 
+  const openEditModal = (item: InventoryItem) => {
+    setEditingItem(item);
+    setEditMinStock(item.minStock);
+    setEditDesiredStock(item.desiredStock);
+    setEditUnit(item.unitOfMeasure);
+    setEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    setSavingEdit(true);
+    try {
+      await api.updateProductSettings(editingItem.productId, {
+        minStock: Number(editMinStock),
+        desiredStock: Number(editDesiredStock),
+        unitOfMeasure: editUnit,
+      });
+      setEditModalOpen(false);
+      fetchInventory();
+    } catch (err: any) {
+      alert('Error actualizando configuración: ' + err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleCreateProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim() || !newCategoryId) return;
+    setCreatingProduct(true);
+    try {
+      await api.createProduct({
+        name: newName.trim(),
+        categoryId: newCategoryId,
+        initialStock: Number(newStock),
+        minStock: Number(newMinStock),
+        desiredStock: Number(newDesiredStock),
+        unitOfMeasure: newUnit,
+        referencePrice: Number(newPrice) || undefined,
+      });
+      setCreateModalOpen(false);
+      setNewName('');
+      setNewStock(1);
+      fetchInventory();
+    } catch (err: any) {
+      alert('Error creando producto: ' + err.message);
+    } finally {
+      setCreatingProduct(false);
+    }
+  };
+
   const filteredItems = items.filter((it) =>
     it.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     it.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -108,17 +190,27 @@ export const InventoryView: React.FC = () => {
           </p>
         </div>
 
-        {/* Buscador */}
-        <div style={{ position: 'relative', width: '280px' }}>
-          <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-          <input
-            type="text"
-            className="input"
-            style={{ paddingLeft: '38px' }}
-            placeholder="Buscar por producto o categoría..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Buscador */}
+          <div style={{ position: 'relative', width: '240px' }}>
+            <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              className="input"
+              style={{ paddingLeft: '38px' }}
+              placeholder="Buscar producto o categoría..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="btn btn-primary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Plus size={16} /> Nuevo Producto
+          </button>
         </div>
       </div>
 
@@ -194,7 +286,7 @@ export const InventoryView: React.FC = () => {
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>{it.storeName || 'Varios'}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
+                      <div style={{ display: 'inline-flex', gap: '6px' }}>
                         {/* Botón Consumir */}
                         <button
                           onClick={() => openConsumeModal(it)}
@@ -205,13 +297,22 @@ export const InventoryView: React.FC = () => {
                           <MinusCircle size={15} color="var(--expense)" /> Consumir
                         </button>
 
+                        {/* Botón Editar Umbrales */}
+                        <button
+                          onClick={() => openEditModal(it)}
+                          className="btn btn-secondary btn-sm"
+                          title="Editar umbrales de stock y medidas"
+                        >
+                          <Settings size={15} color="var(--primary)" />
+                        </button>
+
                         {/* Botón Kárdex / Historial */}
                         <button
                           onClick={() => openKardexModal(it)}
                           className="btn btn-secondary btn-sm"
                           title="Ver Kárdex e Historial de Precios"
                         >
-                          <History size={15} color="var(--primary)" />
+                          <History size={15} color="var(--text-muted)" />
                         </button>
                       </div>
                     </td>
@@ -414,6 +515,203 @@ export const InventoryView: React.FC = () => {
                 Cerrar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Umbrales de Stock */}
+      {editModalOpen && editingItem && (
+        <div className="modal-overlay">
+          <div className="modal-container" style={{ maxWidth: '440px' }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, fontSize: '1.15rem' }}>Configuración de Existencias</h3>
+              <button
+                onClick={() => setEditModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit}>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ background: 'var(--bg-surface-elevated)', padding: '12px', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Producto:</div>
+                  <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-white)' }}>
+                    {editingItem.productName}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Unidad de Medida</label>
+                  <select
+                    className="select"
+                    value={editUnit}
+                    onChange={(e) => setEditUnit(e.target.value)}
+                  >
+                    <option value="PZA">Pieza (PZA)</option>
+                    <option value="KG">Kilogramos (KG)</option>
+                    <option value="L">Litros (L)</option>
+                    <option value="G">Gramos (G)</option>
+                    <option value="ML">Mililitros (ML)</option>
+                    <option value="PAQ">Paquete (PAQ)</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Stock Mínimo (Alerta y Lista de Compras)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    className="input"
+                    value={editMinStock}
+                    onChange={(e) => setEditMinStock(Number(e.target.value))}
+                    required
+                  />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    Si las existencias bajan a este nivel o menos, aparecerá en tu lista automática de compras.
+                  </span>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Stock Deseado (Meta de Reabastecimiento)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    className="input"
+                    value={editDesiredStock}
+                    onChange={(e) => setEditDesiredStock(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" onClick={() => setEditModalOpen(false)} className="btn btn-secondary">
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={savingEdit}>
+                  {savingEdit ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nuevo Producto */}
+      {createModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-container" style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, fontSize: '1.15rem' }}>Agregar Producto al Inventario</h3>
+              <button
+                onClick={() => setCreateModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateProductSubmit}>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">Nombre del Producto</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Ej. Leche Entera 1L, Detergente Líquido..."
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Categoría</label>
+                  <select
+                    className="select"
+                    value={newCategoryId}
+                    onChange={(e) => setNewCategoryId(e.target.value)}
+                    required
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Stock Inicial</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      className="input"
+                      value={newStock}
+                      onChange={(e) => setNewStock(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Unidad de Medida</label>
+                    <select
+                      className="select"
+                      value={newUnit}
+                      onChange={(e) => setNewUnit(e.target.value)}
+                    >
+                      <option value="PZA">Pieza (PZA)</option>
+                      <option value="KG">Kilogramos (KG)</option>
+                      <option value="L">Litros (L)</option>
+                      <option value="G">Gramos (G)</option>
+                      <option value="ML">Mililitros (ML)</option>
+                      <option value="PAQ">Paquete (PAQ)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Stock Mínimo (Alerta)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      className="input"
+                      value={newMinStock}
+                      onChange={(e) => setNewMinStock(Number(e.target.value))}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Precio Referencial ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="input"
+                      placeholder="0.00"
+                      value={newPrice}
+                      onChange={(e) => setNewPrice(Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" onClick={() => setCreateModalOpen(false)} className="btn btn-secondary">
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={creatingProduct}>
+                  {creatingProduct ? 'Creando...' : 'Agregar al Inventario'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

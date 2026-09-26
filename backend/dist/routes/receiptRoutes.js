@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const receiptController_1 = require("../controllers/receiptController");
+const auth_1 = require("../middlewares/auth");
+const upload_1 = require("../middlewares/upload");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticateJwt);
+router.post('/upload', upload_1.uploadMiddleware.single('image'), (req, res) => receiptController_1.receiptController.uploadAndProcess(req, res));
+router.get('/:id', (req, res) => receiptController_1.receiptController.getReceipt(req, res));
+router.post('/:id/confirm', (req, res) => receiptController_1.receiptController.confirmReceipt(req, res));
+router.post('/:id/dismiss-duplicate', (req, res) => receiptController_1.receiptController.dismissDuplicate(req, res));
+exports.default = router;

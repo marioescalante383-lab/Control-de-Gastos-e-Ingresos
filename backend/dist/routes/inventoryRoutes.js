@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const inventoryController_1 = require("../controllers/inventoryController");
+const auth_1 = require("../middlewares/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticateJwt);
+router.get('/', (req, res) => inventoryController_1.inventoryController.getInventory(req, res));
+router.post('/movement', (req, res) => inventoryController_1.inventoryController.recordMovement(req, res));
+router.get('/shopping-list', (req, res) => inventoryController_1.inventoryController.getShoppingList(req, res));
+router.get('/kardex/:productId', (req, res) => inventoryController_1.inventoryController.getProductKardex(req, res));
+router.post('/product', (req, res) => inventoryController_1.inventoryController.createProduct(req, res));
+router.put('/product/:productId', (req, res) => inventoryController_1.inventoryController.updateProductSettings(req, res));
+exports.default = router;

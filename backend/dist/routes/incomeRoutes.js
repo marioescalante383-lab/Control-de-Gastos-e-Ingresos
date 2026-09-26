@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const incomeController_1 = require("../controllers/incomeController");
+const auth_1 = require("../middlewares/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticateJwt);
+router.get('/', (req, res) => incomeController_1.incomeController.getIncomes(req, res));
+router.post('/', (req, res) => incomeController_1.incomeController.createIncome(req, res));
+router.delete('/:id', (req, res) => incomeController_1.incomeController.deleteIncome(req, res));
+exports.default = router;

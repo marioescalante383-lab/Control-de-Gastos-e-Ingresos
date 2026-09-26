@@ -7,6 +7,7 @@ import { InventoryView } from './components/inventory/InventoryView';
 import { ShoppingListView } from './components/shopping/ShoppingListView';
 import { TransactionsView } from './components/transactions/TransactionsView';
 import { ReportsView } from './components/reports/ReportsView';
+import { SettingsView } from './components/settings/SettingsView';
 import { ReceiptScanModal } from './components/receipts/ReceiptScanModal';
 import { ManualExpenseModal } from './components/transactions/ManualExpenseModal';
 import { IncomeModal } from './components/transactions/IncomeModal';
@@ -293,6 +294,8 @@ export const App: React.FC = () => {
           {activeTab === 'transactions' && <TransactionsView />}
 
           {activeTab === 'reports' && <ReportsView />}
+
+          {activeTab === 'settings' && <SettingsView />}
         </main>
       </div>
 

@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const dashboardController_1 = require("../controllers/dashboardController");
+const auth_1 = require("../middlewares/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticateJwt);
+router.get('/summary', (req, res) => dashboardController_1.dashboardController.getSummary(req, res));
+router.get('/export/csv', (req, res) => dashboardController_1.dashboardController.exportCsv(req, res));
+router.get('/reports', (req, res) => dashboardController_1.dashboardController.getFinancialReport(req, res));
+exports.default = router;

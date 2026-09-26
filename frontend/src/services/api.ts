@@ -193,6 +193,61 @@ export class ApiService {
     if (endDate) params.append('endDate', endDate);
     return this.request<any>(`/dashboard/reports?${params.toString()}`);
   }
+
+  // Configuración y Reglas de Categorización
+  async updateCategory(id: string, cat: { name?: string; color?: string; icon?: string; isActive?: boolean }) {
+    return this.request<any>(`/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(cat),
+    });
+  }
+
+  async deleteCategory(id: string) {
+    return this.request<any>(`/categories/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getCategoryRules() {
+    return this.request<any[]>('/categories/rules');
+  }
+
+  async createCategoryRule(rule: { matchKeyword: string; targetCategoryId: string; matchField?: string; priority?: number }) {
+    return this.request<any>('/categories/rules', {
+      method: 'POST',
+      body: JSON.stringify(rule),
+    });
+  }
+
+  // Inventario y Productos
+  async createProduct(productData: {
+    name: string;
+    categoryId: string;
+    initialStock?: number;
+    minStock?: number;
+    desiredStock?: number;
+    unitOfMeasure?: string;
+    referencePrice?: number;
+  }) {
+    return this.request<any>('/inventory/product', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async updateProductSettings(productId: string, data: {
+    minStock?: number;
+    desiredStock?: number;
+    unitOfMeasure?: string;
+    categoryId?: string;
+    defaultStoreId?: string;
+  }) {
+    return this.request<any>(`/inventory/product/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const api = new ApiService();
+
