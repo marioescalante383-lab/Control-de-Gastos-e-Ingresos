@@ -1,8 +1,5 @@
 {
   "name": "control-de-gastos",
   "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "build": "cd frontend && npm install && npm run build"
-  }
+  "private": true
 }
