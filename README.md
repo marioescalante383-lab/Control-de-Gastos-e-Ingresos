@@ -22,7 +22,7 @@ Aplicación completa diseñada para gestionar finanzas personales y control de e
    - Reconoce variaciones de nombres impresos en tickets (ej. `"LECHE LALA 1L"` vs `"LALA LECHE 1 LT"`).
    - Cada corrección que realiza el usuario se memoriza en la base de datos para no volver a preguntar.
 
-4. **Inventario y Kárdex Automatizado:**
+4. **Inventario y Kárdex Automatizado:** 
    - Las compras confirmadas incrementan automáticamente el stock de productos configurados como inventariables.
    - Registro ultra-rápido de consumo o salidas (Consumo, Caducado, Perdido, Regalado, Ajuste manual).
    - Historial de precios pagados por producto a lo largo del tiempo.
