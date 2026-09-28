@@ -43,11 +43,15 @@ export const DashboardView: React.FC<{ user: { name: string } }> = ({ user }) =>
       file: selectedFile ? { name: selectedFile.name, type: selectedFile.type } : undefined
     };
     setMovements([nuevo, ...movements]);
-    setDescription(''); setAmount(''); setSelectedFile(null);
+    setDescription('');
+    setAmount('');
+    setSelectedFile(null);
   };
 
   const limpiar = () => {
-    setDescription(''); setAmount(''); setSelectedFile(null);
+    setDescription('');
+    setAmount('');
+    setSelectedFile(null);
     setDate(new Date().toISOString().split('T')[0]);
   };
 
@@ -82,7 +86,6 @@ export const DashboardView: React.FC<{ user: { name: string } }> = ({ user }) =>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* FORMULARIO CON ARCHIVO */}
         <div className="bg-white rounded-xl shadow p-5">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">Nuevo movimiento</h2>
           <p className="text-sm text-gray-400 mb-4">Completa los datos y adjunta tu comprobante 📎</p>
@@ -128,7 +131,6 @@ export const DashboardView: React.FC<{ user: { name: string } }> = ({ user }) =>
               </div>
             </div>
 
-            {/* 📎 SECCIÓN DE ARCHIVO */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Comprobante (PDF o imagen) 📎</label>
               <input type="file" ref={fileInputRef} onChange={handleFileChange}
@@ -157,17 +159,9 @@ export const DashboardView: React.FC<{ user: { name: string } }> = ({ user }) =>
           </div>
         </div>
 
-        {/* LISTA DE MOVIMIENTOS */}
         <div className="bg-white rounded-xl shadow p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">Movimientos</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 bg-gray-800 text-white text-sm rounded">Todos</button>
-              <button className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded">Ingresos</button>
-              <button className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded">Gastos</button>
-            </div>
-          </div>
-
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">Movimientos</h2>
+          
           {movements.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <p className="text-lg">Todavía no hay movimientos</p>
@@ -181,7 +175,9 @@ export const DashboardView: React.FC<{ user: { name: string } }> = ({ user }) =>
                     <div>
                       <p className="font-medium text-gray-800">{m.description}</p>
                       <p className="text-xs text-gray-400">{m.category} — {m.date}</p>
-                      {m.file && <p className="text-xs text-emerald-500 mt-1">📎 {m.file.name}</p>}
+                      {m.file && (
+                        <p className="text-xs text-emerald-500 mt-1">📎 {m.file.name}</p>
+                      )}
                     </div>
                     <p className={font-bold ${m.type === 'ingreso' ? 'text-emerald-600' : 'text-red-600'}}>
                       {m.type === 'ingreso' ? '+' : '-'}${m.amount.toFixed(2)}
