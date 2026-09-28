@@ -10,7 +10,7 @@ type Movement = {
   file?: { name: string; type: string; url?: string };
 };
 
-export const DashboardView: React.FC<{ user?: { name: string } }> = ({ user }) => {
+export const DashboardView: React.FC<{ user?: { name: string } }> = ({ _user }) => {
   const [movements, setMovements] = useState<Movement[]>([
     { id: 1, type: 'gasto', description: 'Super', category: 'Alimentación', amount: 2500, date: '2026-09-28' }
   ]);
