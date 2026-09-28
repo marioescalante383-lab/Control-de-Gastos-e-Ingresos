@@ -30,7 +30,7 @@ export const DashboardView: React.FC<{ user: { name: string } }> = ({ user }) =>
 
   const guardar = () => {
     if (!description || !amount || parseFloat(amount) <= 0) {
-      alert('Completa la descripción y un monto válido');
+      alert('Completa la descripción y un monto válido ✅');
       return;
     }
     const nuevo: Movement = {
@@ -165,7 +165,7 @@ export const DashboardView: React.FC<{ user: { name: string } }> = ({ user }) =>
           {movements.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <p className="text-lg">Todavía no hay movimientos</p>
-              <p className="text-sm mt-2">Registra tu primer ingreso o gasto desde el formulario</p>
+              <p className="text-sm mt-2">Registra tu primer ingreso o gasto desde el formulario ✍️</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-[500px] overflow-y-auto">
