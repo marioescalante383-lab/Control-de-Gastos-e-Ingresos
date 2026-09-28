@@ -8,7 +8,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user }) => {
   return (
     <div className="p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-4">Panel Principal</h1>
-      <p className="text-gray-600 mb-6">Bienvenido{user?.name ? , ${user.name} : ''} 👋</p>
+      <p className="text-gray-600 mb-6">
+        Bienvenido{user?.name ? , ${user.name} : ''} 👋
+      </p>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-blue-50 p-4 rounded-lg">
