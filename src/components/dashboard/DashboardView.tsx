@@ -32,7 +32,7 @@ export const DashboardView: React.FC = () => {
   const saldo = totalIngresos - totalGastos;
 
   const leerReciboConIA = async (archivo: File) => {
-    if (!GOOGLE_API_KEY) {
+    if {(! import.meta.envVITE_GOOGLE_API_KEY) {
       alert('⚠️ Falta configurar la clave de API');
       return;
     }
@@ -47,7 +47,7 @@ export const DashboardView: React.FC = () => {
       });
 
       const respuesta = await fetch(
-        https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GOOGLE_API_KEY},
+        https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GOOGLE_API_KEY},
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -55,8 +55,8 @@ export const DashboardView: React.FC = () => {
             contents: [{
               parts: [
                 { text: `Extrae de este recibo: descripción, monto total, fecha y categoría.
-Categorías disponibles: Vivienda, Alimentación, Transporte, Salud, Entretenimiento, Educación, Otros.
-Responde SOLO en formato JSON así:
+Categorías disponibles: Vivienda, Alimentación, Transporte, Salud, Entretenimiento, Educación, Otros.,
+Responde SOLO en formato JSON así}:
 {
   "descripcion": "...",
   "monto": 0.00,
