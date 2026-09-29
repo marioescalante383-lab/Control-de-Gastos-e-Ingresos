@@ -32,7 +32,7 @@ export const DashboardView: React.FC = () => {
   const saldo = totalIngresos - totalGastos;
 
   const leerReciboConIA = async (archivo: File) => {
-    if {(! import.meta.envVITE_GOOGLE_API_KEY) {
+    if (!import.meta.env.VITE_GOOGLE_API_KEY) {
       alert('⚠️ Falta configurar la clave de API');
       return;
     }
