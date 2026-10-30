@@ -1,0 +1,5 @@
+{
+  "name": "Control de Gastos Familiares AI",
+  "description": "Una aplicación inteligente para el seguimiento de gastos familiares que digitaliza recibos usando IA y permite el registro manual, manteniendo un historial persistente de todas las transacciones.",
+  "requestFramePermissions": []
+}
