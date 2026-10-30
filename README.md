@@ -1,6 +1,6 @@
 # Antigravity Finance | Control Integral de Gastos, Ingresos, Inventario y Comprobantes con IA
 
-Aplicación completa diseñada para gestionar finanzas personales y control de existencias en tiempo real, procesando comprobantes de compra (tickets, recibos, facturas) mediante **Google Gemini 2.0 Flash Multimodal** e integración con **Google Drive**.
+Aplicación completa diseñada para gestionar finanzas personales y control de existencias en tiempo real, procesando comprobantes de compra (tickets, recibos, facturas) mediante **Google Gemini 3.8 Flash Multimodal** e integración con **Google Drive**.
 
 ---
 
@@ -22,7 +22,7 @@ Aplicación completa diseñada para gestionar finanzas personales y control de e
    - Reconoce variaciones de nombres impresos en tickets (ej. `"LECHE LALA 1L"` vs `"LALA LECHE 1 LT"`).
    - Cada corrección que realiza el usuario se memoriza en la base de datos para no volver a preguntar.
 
-4. **Inventario y Kárdex Automatizado:** 
+4. **Inventario y Kárdex Automatizado:**
    - Las compras confirmadas incrementan automáticamente el stock de productos configurados como inventariables.
    - Registro ultra-rápido de consumo o salidas (Consumo, Caducado, Perdido, Regalado, Ajuste manual).
    - Historial de precios pagados por producto a lo largo del tiempo.
@@ -89,4 +89,4 @@ GOOGLE_CLIENT_SECRET=""
 GOOGLE_REDIRECT_URI="http://localhost:5000/api/auth/google/callback"
 ```
 
-> **Nota sobre el modo sin API Key:** Si `GEMINI_API_KEY` está vacía, el sistema activa automáticamente un **motor de simulación de OCR inteligente**, permitiendo probar todo el flujo de escaneo, detección de duplicados, corrección y actualización de inventario sin depender de conexión a servicios de pago.
+> **Escaneos Reales Exclusivos:** El sistema procesa única y exclusivamente imágenes reales (fotos y PDFs) proporcionados por el usuario mediante **Google Gemini 3.8 Flash**. Si la clave API no está configurada, el sistema solicitará conectarla en la pantalla de escaneo o en Ajustes.
