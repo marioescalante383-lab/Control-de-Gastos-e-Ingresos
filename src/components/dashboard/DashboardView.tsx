@@ -52,7 +52,7 @@ export const DashboardView: React.FC = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{
+            contents: [[
               parts: [
                 { text: `Extrae de este recibo: descripción, monto total, fecha y categoría.
 Categorías disponibles: Vivienda, Alimentación, Transporte, Salud, Entretenimiento, Educación, Otros.,
