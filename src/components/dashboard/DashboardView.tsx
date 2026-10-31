@@ -47,13 +47,28 @@ export const DashboardView: React.FC = () => {
       });
 
       const respuesta = await fetch(
-        https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GOOGLE_API_KEY},
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [[
-              parts: [
+  https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GOOGLE_API_KEY},
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: `Extrae de este recibo: descripción, monto total, fecha y categoría.
+Categorías disponibles: Vivienda, Alimentación, Transporte, Salud, Entretenimiento, Educación, Otros.
+Responde SOLO en formato JSON así:
+{
+  "descripcion": "...",
+  "monto": 0.00,
+  "fecha": "AAAA-MM-DD",
+  "categoria": "..."
+}` },
+          { inline_data: { mime_type: archivo.type, data: base64 } }
+        ]
+      }]
+    })
+  }
+);
                 { text: `Extrae de este recibo: descripción, monto total, fecha y categoría.
 Categorías disponibles: Vivienda, Alimentación, Transporte, Salud, Entretenimiento, Educación, Otros.,
 Responde SOLO en formato JSON así:
