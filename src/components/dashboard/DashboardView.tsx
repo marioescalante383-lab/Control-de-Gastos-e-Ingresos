@@ -1,267 +1,322 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
+import {
+  Users,
+  Send,
+  Sparkles,
+  Image as ImageIcon,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  Shield,
+  ArrowRight,
+  TrendingUp,
+  ExternalLink,
+  Zap,
+  Database,
+  Calendar,
+  DollarSign,
+} from 'lucide-react';
+import { WhatsAppStatus, AppSettings } from '../../types';
+import { ConnectionCard } from '../whatsapp/ConnectionCard';
+import { NavTab } from '../layout/DesktopSidebar';
 
-type Movement = {
-  id: number;
-  type: 'ingreso' | 'gasto';
-  description: string;
-  category: string;
-  amount: number;
-  date: string;
-  file?: { name: string; type: string };
-};
+interface DashboardOverviewProps {
+  status: WhatsAppStatus;
+  settings: AppSettings | null;
+  onRefresh: () => void;
+  onSelectTab: (tab: NavTab) => void;
+  groupsCount: number;
+  kbCount: number;
+  mediaCount: number;
+}
 
-const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY || '';
-
-export const DashboardView: React.FC = () => {
-  const [movements, setMovements] = useState<Movement[]>([
-    { id: 1, type: 'gasto', description: 'Supermercado', category: 'Alimentación', amount: 2500, date: '2026-09-28' }
-  ]);
-  const [type, setType] = useState<'ingreso' | 'gasto'>('gasto');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('Alimentación');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState('2026-09-28');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isReading, setIsReading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  const totalIngresos = movements.filter(m => m.type === 'ingreso').reduce((s, m) => s + m.amount, 0);
-  const totalGastos = movements.filter(m => m.type === 'gasto').reduce((s, m) => s + m.amount, 0);
-  const saldo = totalIngresos - totalGastos;
-
-  const leerReciboConIA = async (archivo: File) => {
-    if (!import.meta.env.VITE_GOOGLE_API_KEY) {
-      alert('⚠️ Falta configurar la clave de API');
-      return;
-    }
-
-    setIsReading(true);
-    try {
-      // Convertir imagen a base64
-      const base64 = await new Promise<string>((resolve) => {
-        const lector = new FileReader();
-        lector.onload = () => resolve(lector.result?.toString().split(',')[1] || '');
-        lector.readAsDataURL(archivo);
-      });
-
-      const respuesta = await fetch(
-  https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GOOGLE_API_KEY},
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: `Extrae de este recibo: descripción, monto total, fecha y categoría.
-Categorías disponibles: Vivienda, Alimentación, Transporte, Salud, Entretenimiento, Educación, Otros.
-Responde SOLO en formato JSON así:
-{
-  "descripcion": "...",
-  "monto": 0.00,
-  "fecha": "AAAA-MM-DD",
-  "categoria": "..."
-}` },
-          { inline_data: { mime_type: archivo.type, data: base64 } }
-        ]
-      }]
-    })
-  }
-);
-                { text: `Extrae de este recibo: descripción, monto total, fecha y categoría.
-Categorías disponibles: Vivienda, Alimentación, Transporte, Salud, Entretenimiento, Educación, Otros.,
-Responde SOLO en formato JSON así:
-{
-  "descripcion": "...",
-  "monto": 0.00,
-  "fecha": "AAAA-MM-DD",
-  "categoria": "..."
-}` },
-                { inline_data: { mime_type: archivo.type, data: base64 } }
-              ]
-            }]
-          })
-        }
-      );
-
-      const datos = await respuesta.json();
-      const texto = datos?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
-      // Extraer JSON de la respuesta
-      const jsonMatch = texto.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const info = JSON.parse(jsonMatch[0]);
-        if (info.descripcion) setDescription(info.descripcion);
-        if (info.monto) setAmount(String(info.monto));
-        if (info.fecha) setDate(info.fecha);
-        if (info.categoria) setCategory(info.categoria);
-      }
-    } catch (error) {
-      console.error('Error leyendo:', error);
-      alert('No se pudo leer el recibo, llénalo tú por favor ✍️');
-    }
-    setIsReading(false);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setSelectedFile(file);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    
-    if (file.type.startsWith('image/')) {
-      setPreviewUrl(URL.createObjectURL(file));
-      leerReciboConIA(file);
-    }
-  };
-
-  const guardar = () => {
-    if (!description || !amount || parseFloat(amount) <= 0) {
-      alert('Completa descripción y monto ✅');
-      return;
-    }
-    const nuevo: Movement = {
-      id: Date.now(),
-      type,
-      description,
-      category,
-      amount: parseFloat(amount),
-      date,
-      file: selectedFile ? { name: selectedFile.name, type: selectedFile.type } : undefined
-    };
-    setMovements([nuevo, ...movements]);
-    setDescription('');
-    setAmount('');
-    setSelectedFile(null);
-    setPreviewUrl(null);
-  };
-
-  const limpiar = () => {
-    setDescription('');
-    setAmount('');
-    setSelectedFile(null);
-    setPreviewUrl(null);
-  };
-
-  const categorias = ['Vivienda', 'Alimentación', 'Transporte', 'Salud', 'Entretenimiento', 'Educación', 'Otros'];
+export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
+  status,
+  settings,
+  onRefresh,
+  onSelectTab,
+  groupsCount,
+  kbCount,
+  mediaCount,
+}) => {
+  const isConnected = status.state === 'connected';
+  const configuredKeysCount = settings?.geminiKeys?.filter((k) => k.key && k.key.trim() !== '').length || 0;
 
   return (
-    <div style={{minHeight:'100vh', background:'#f5f5f5', padding:'20px', maxWidth:'1200px', margin:'0 auto', fontFamily:'system-ui'}}>
-      <header style={{display:'flex', justifyContent:'space-between', marginBottom:'30px'}}>
-        <div>
-          <h1 style={{margin:0, fontSize:'22px'}}>💰 Libro de Gastos</h1>
-          <p style={{margin:0, color:'#666', fontSize:'14px'}}>Lectura automática con IA</p>
-        </div>
-        <span style={{color:'#666', fontSize:'14px'}}>28/09/2026</span>
-      </header>
+    <div className="space-y-6">
+      {/* WhatsApp Connection Card */}
+      <ConnectionCard status={status} onRefresh={onRefresh} />
 
-      <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'15px', marginBottom:'30px'}}>
-        <div style={{background:'white', padding:'20px', borderRadius:'10px', borderLeft:'4px solid #10b981'}}>
-          <p style={{color:'#666', fontSize:'13px'}}>↑ INGRESOS</p>
-          <p style={{fontSize:'24px', fontWeight:'bold'}}>${totalIngresos.toFixed(2)}</p>
+      {/* No API Key Alert Banner if connected but key is missing */}
+      {configuredKeysCount === 0 && (
+        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 flex-shrink-0">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-200">
+                ⚠️ Clave de Google AI Studio pendiente de configuración
+              </h4>
+              <p className="text-[11px] text-amber-300/80 mt-0.5">
+                {isConnected
+                  ? 'WhatsApp está conectado, pero la IA no responderá a los mensajes entrantes hasta que ingreses tu API Key de Gemini.'
+                  : 'Para que tu chatbot responda automáticamente, debes ingresar tu API Key gratuita de Gemini.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onSelectTab('ai_settings')}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition flex items-center gap-2 shadow-md flex-shrink-0"
+          >
+            <span>Configurar Clave Ahora</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
-        <div style={{background:'white', padding:'20px', borderRadius:'10px', borderLeft:'4px solid #ef4444'}}>
-          <p style={{color:'#666', fontSize:'13px'}}>↓ GASTOS</p>
-          <p style={{fontSize:'24px', fontWeight:'bold'}}>${totalGastos.toFixed(2)}</p>
+      )}
+
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+        {/* Card 1: Groups */}
+        <div
+          onClick={() => onSelectTab('groups')}
+          className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer group shadow-lg flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-400">Grupos de WhatsApp</span>
+            <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:scale-110 transition">
+              <Users className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-black text-white">{groupsCount}</span>
+            <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Filtrado & Envíos</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
+            </p>
+          </div>
         </div>
-        <div style={{background:'white', padding:'20px', borderRadius:'10px', borderLeft:'4px solid #f59e0b'}}>
-          <p style={{color:'#666', fontSize:'13px'}}>SALDO</p>
-          <p style={{fontSize:'24px', fontWeight:'bold', color:saldo>=0?'#d97706':'#b91c1c'}}>${saldo.toFixed(2)}</p>
+
+        {/* Card 2: Knowledge Base */}
+        <div
+          onClick={() => onSelectTab('ai_settings')}
+          className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer group shadow-lg flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-400">Base de Conocimientos</span>
+            <div className="p-2 rounded-xl bg-purple-500/15 text-purple-400 group-hover:scale-110 transition">
+              <Sparkles className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-black text-white">{kbCount}</span>
+            <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Artículos Activos</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
+            </p>
+          </div>
+        </div>
+
+        {/* Card 3: Media Catalog */}
+        <div
+          onClick={() => onSelectTab('media_catalog')}
+          className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer group shadow-lg flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-400">Catálogo WebP IA</span>
+            <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 group-hover:scale-110 transition">
+              <ImageIcon className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-black text-white">{mediaCount}</span>
+            <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Imágenes optimizadas</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Gemini Failover Status */}
+        <div
+          onClick={() => onSelectTab('ai_settings')}
+          className={`p-5 rounded-2xl border transition cursor-pointer group shadow-lg flex flex-col justify-between ${
+            configuredKeysCount === 0
+              ? 'bg-amber-950/20 border-amber-500/40 hover:border-amber-400'
+              : 'bg-slate-900 border border-slate-800 hover:border-slate-700'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-400">Pool de Claves IA</span>
+            <div
+              className={`p-2 rounded-xl group-hover:scale-110 transition ${
+                configuredKeysCount === 0
+                  ? 'bg-amber-500/15 text-amber-400'
+                  : 'bg-emerald-500/15 text-emerald-400'
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className={`text-2xl font-black ${configuredKeysCount === 0 ? 'text-amber-400' : 'text-white'}`}>
+                {configuredKeysCount}
+              </span>
+              {configuredKeysCount === 0 && (
+                <span className="text-[11px] font-bold text-amber-400/90">
+                  (Sin Configurar)
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>{configuredKeysCount === 0 ? 'Haz clic para agregar' : (settings?.selectedModel || 'Gemini')}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
+            </p>
+          </div>
+        </div>
+
+        {/* Card 5: Memory & Database (Oracle Postgres / Supabase) */}
+        <div
+          onClick={() => onSelectTab('memory')}
+          className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 transition cursor-pointer group shadow-lg flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-400">Memoria Chatbot</span>
+            <div className="p-2 rounded-xl bg-blue-500/15 text-blue-400 group-hover:scale-110 transition">
+              <Database className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-black text-white">Dual-DB</span>
+            <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Oracle + Supabase</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
+            </p>
+          </div>
+        </div>
+
+        {/* Card 6: Agenda & Clases */}
+        <div
+          onClick={() => onSelectTab('bookings')}
+          className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition cursor-pointer group shadow-lg flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-400">Agenda & Clases</span>
+            <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 group-hover:scale-110 transition">
+              <Calendar className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-black text-white">IA Booking</span>
+            <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Citas & Horarios</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
+            </p>
+          </div>
+        </div>
+
+        {/* Card 7: Finanzas & Pagos IA */}
+        <div
+          onClick={() => onSelectTab('finance')}
+          className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 transition cursor-pointer group shadow-lg flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-400">Finanzas & Pagos</span>
+            <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:scale-110 transition">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-black text-white">IA Vision</span>
+            <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Cuotas & Vouchers</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
+            </p>
+          </div>
         </div>
       </div>
 
-      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px'}}>
-        <div style={{background:'white', padding:'25px', borderRadius:'10px'}}>
-          <h2 style={{fontSize:'18px', margin:'0 0 20px 0'}}>Nuevo movimiento</h2>
-
-          <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-            <button onClick={()=>setType('ingreso')} style={{
-              flex:1, padding:'10px', border:'none', borderRadius:'6px',
-              background: type==='ingreso'?'#d1fae5':'#f3f4f6',
-              color: type==='ingreso'?'#065f46':'#374151'
-            }}>↑ Ingreso</button>
-            <button onClick={()=>setType('gasto')} style={{
-              flex:1, padding:'10px', border:'none', borderRadius:'6px',
-              background: type==='gasto'?'#fee2e2':'#f3f4f6',
-              color: type==='gasto'?'#991b1b':'#374151'
-            }}>↓ Gasto</button>
+      {/* Google AI Studio Quick Access Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-slate-900 to-emerald-950/40 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5" />
           </div>
-
-          <div style={{marginBottom:'15px', padding:'15px', background:'#f9fafb', borderRadius:'8px', border:'1px dashed #ccc'}}>
-            <label style={{display:'block', fontSize:'13px', fontWeight:'500', marginBottom:'10px'}}>📷 Recibo / Foto</label>
-            <div style={{display:'flex', gap:'10px', marginBottom:'10px'}}>
-              <button onClick={()=>fileInputRef.current?.click()} style={{
-                flex:1, padding:'10px', background:'#eef2ff', border:'none', borderRadius:'6px', cursor:'pointer'
-              }}>📄 Subir</button>
-              <button onClick={()=>cameraInputRef.current?.click()} style={{
-                flex:1, padding:'10px', background:'#ecfdf5', border:'none', borderRadius:'6px', cursor:'pointer'
-              }}>📷 Cámara</button>
-            </div>
-            <input type="file" ref={fileInputRef} onChange={handleFileSelect}
-              accept="image/*,.pdf" style={{display:'none'}} />
-            <input type="file" ref={cameraInputRef} onChange={handleFileSelect}
-              accept="image/*" capture="environment" style={{display:'none'}} />
-            
-            {isReading && <p style={{color:'#3b82f6', fontSize:'13px'}}>🤖 La IA está leyendo... ⏳</p>}
-            
-            {selectedFile && (
-              <div style={{marginTop:'10px', padding:'10px', background:'white', borderRadius:'6px'}}>
-                <p style={{margin:0, fontSize:'13px', color:'#047857'}}>✅ {selectedFile.name}</p>
-                {previewUrl && <img src={previewUrl} alt="Vista" style={{maxWidth:'100%', marginTop:'8px', borderRadius:'4px'}} />}
-              </div>
-            )}
-          </div>
-
-          <div style={{marginBottom:'15px'}}>
-            <label style={{display:'block', fontSize:'13px', marginBottom:'5px'}}>Descripción</label>
-            <input type="text" value={description} onChange={e=>setDescription(e.target.value)}
-              style={{width:'100%', padding:'10px', border:'1px solid #ddd', borderRadius:'6px'}} />
-          </div>
-
-          <div style={{marginBottom:'15px'}}>
-            <label style={{display:'block', fontSize:'13px', marginBottom:'5px'}}>Categoría</label>
-            <select value={category} onChange={e=>setCategory(e.target.value)}
-              style={{width:'100%', padding:'10px', border:'1px solid #ddd', borderRadius:'6px'}}>
-              {categorias.map(c=><option key={c}>{c}</option>)}
-            </select>
-          </div>
-
-          <div style={{display:'flex', gap:'10px', marginBottom:'15px'}}>
-            <div style={{flex:1}}>
-              <label style={{display:'block', fontSize:'13px', marginBottom:'5px'}}>Monto</label>
-              <input type="number" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)}
-                style={{width:'100%', padding:'10px', border:'1px solid #ddd', borderRadius:'6px'}} />
-            </div>
-            <div style={{flex:1}}>
-              <label style={{display:'block', fontSize:'13px', marginBottom:'5px'}}>Fecha</label>
-              <input type="date" value={date} onChange={e=>setDate(e.target.value)}
-                style={{width:'100%', padding:'10px', border:'1px solid #ddd', borderRadius:'6px'}} />
-            </div>
-          </div>
-
-          <div style={{display:'flex', gap:'10px'}}>
-            <button onClick={guardar} style={{
-              flex:1, padding:'12px', background:'#374151', color:'white', border:'none', borderRadius:'6px', fontSize:'15px'
-            }}>💾 Guardar</button>
-            <button onClick={limpiar} style={{padding:'12px', background:'transparent', border:'none', color:'#666'}}>Limpiar</button>
+          <div>
+            <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>Google AI Studio & Modelos Flash-Lite (3.5 / 3.1)</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                0 Tokens / Gratuito
+              </span>
+            </h4>
+            <p className="text-[11px] text-slate-300 mt-0.5">
+              Utiliza modelos ultrarrápidos de bajo consumo y obtén tus API keys directamente en la consola oficial.
+            </p>
           </div>
         </div>
 
-        <div style={{background:'white', padding:'25px', borderRadius:'10px'}}>
-          <h2 style={{fontSize:'18px', margin:'0 0 20px 0'}}>Movimientos</h2>
-          {movements.map(m => (
-            <div key={m.id} style={{display:'flex', justifyContent:'space-between', padding:'12px 0', borderBottom:'1px solid #eee'}}>
-              <div>
-                <p style={{margin:0, fontWeight:'500'}}>{m.description}</p>
-                <p style={{margin:0, fontSize:'12px', color:'#888'}}>{m.category} · {m.date.split('-').reverse().join('/')}</p>
-              </div>
-              <span style={{fontWeight:'bold', color:m.type==='ingreso'?'#047857':'#b91c1c'}}>
-                {m.type==='ingreso'?'+':'-'}${m.amount.toFixed(2)}
-              </span>
+        <a
+          href="https://aistudio.google.com/app/apikey"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition flex items-center gap-2 shadow-md shadow-purple-950/40 flex-shrink-0"
+        >
+          <span>Obtener Clave en Google AI Studio</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
+      </div>
+
+      {/* Feature Highlights Banner */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Action Card 1: Bulk Sender */}
+        <div
+          onClick={() => onSelectTab('messaging')}
+          className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-emerald-950/40 border border-slate-800 hover:border-emerald-500/40 transition cursor-pointer group shadow-xl"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400">
+              <Send className="w-6 h-6" />
             </div>
-          ))}
+            <div>
+              <h4 className="text-sm font-bold text-white group-hover:text-emerald-300 transition">
+                Envío Masivo Inteligente con Excel
+              </h4>
+              <p className="text-xs text-slate-400">
+                Pega celdas o sube tu .xlsx con detección automática de teléfonos y nombres.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold mt-4">
+            <span>Configurar Campaña</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+          </div>
+        </div>
+
+        {/* Action Card 2: Chat Simulator */}
+        <div
+          onClick={() => onSelectTab('simulator')}
+          className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-purple-950/40 border border-slate-800 hover:border-purple-500/40 transition cursor-pointer group shadow-xl"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-xl bg-purple-500/20 text-purple-400">
+              <MessageSquare className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white group-hover:text-purple-300 transition">
+                Probar Chatbot en el Simulador
+              </h4>
+              <p className="text-xs text-slate-400">
+                Interactúa con Gemini, verifica la base de conocimientos y el envío de imágenes.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-purple-400 font-semibold mt-4">
+            <span>Abrir Simulador</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+          </div>
         </div>
       </div>
     </div>
