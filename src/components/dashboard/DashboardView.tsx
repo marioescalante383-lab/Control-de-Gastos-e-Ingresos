@@ -56,7 +56,7 @@ export const DashboardView: React.FC = () => {
               parts: [
                 { text: `Extrae de este recibo: descripción, monto total, fecha y categoría.
 Categorías disponibles: Vivienda, Alimentación, Transporte, Salud, Entretenimiento, Educación, Otros.,
-Responde SOLO en formato JSON así}:
+Responde SOLO en formato JSON así:
 {
   "descripcion": "...",
   "monto": 0.00,
